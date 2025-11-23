@@ -4,7 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Кредитний Калькулятор</title>
-    <!-- Tailwind via CDN for simplicity in local setup -->
+
+    <!-- Favicon: Calculator with Dollar Sign -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='2' width='24' height='28' rx='4' fill='%234f46e5'/%3E%3Crect x='8' y='6' width='16' height='8' rx='1' fill='%23e0e7ff'/%3E%3Ctext x='16' y='26' font-family='sans-serif' font-weight='bold' font-size='14' fill='white' text-anchor='middle'%3E$%3C/text%3E%3C/svg%3E" type="image/svg+xml" />
+
+    <!-- Tailwind via CDN for simplicity in local setup (optional, Vite usually handles CSS but this is fine for quick start) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -19,12 +23,12 @@
         {
           "imports": {
             "react": "https://aistudiocdn.com/react@^19.2.0",
-            "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-            "react/": "https://aistudiocdn.com/react@^19.2.0/",
-            "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-            "recharts": "https://aistudiocdn.com/recharts@^3.5.0",
             "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
             "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0",
+            "react/": "https://aistudiocdn.com/react@^19.2.0/",
+            "recharts": "https://aistudiocdn.com/recharts@^3.5.0",
+            "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+            "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
             "vite": "https://aistudiocdn.com/vite@^7.2.4",
             "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
           }
