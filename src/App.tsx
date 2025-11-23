@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calculator, DollarSign, Percent, Calendar, Sparkles, ChevronDown, CheckSquare, Square, CalendarDays, Banknote, Divide, Info, AlertTriangle } from 'lucide-react';
+import { Calculator, DollarSign, Percent, Calendar, Sparkles, ChevronDown, CheckSquare, Square, CalendarDays, Banknote, Divide, Info, AlertTriangle, Save, Trash2, Clock, RotateCcw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { calculateAnnuityLoan, formatCurrency } from './utils/financial';
 import InputSlider from './components/InputSlider';
@@ -8,6 +8,7 @@ import ResultCard from './components/ResultCard';
 import AmortizationChart from './components/AmortizationChart';
 import ScheduleTable from './components/ScheduleTable';
 import { getFinancialAdvice } from './services/geminiService';
+import { HistoryItem } from './types';
 
 // Define available loan types
 const LOAN_TYPES = [
@@ -36,6 +37,17 @@ const App: React.FC = () => {
     const [aiAdvice, setAiAdvice] = useState<string>('');
     const [isLoadingAi, setIsLoadingAi] = useState<boolean>(false);
     const [aiError, setAiError] = useState<boolean>(false);
+
+    // History State
+    const [history, setHistory] = useState<HistoryItem[]>(() => {
+        try {
+            const saved = localStorage.getItem('loanCalculatorHistory');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            console.error("Failed to load history", e);
+            return [];
+        }
+    });
 
     // Effect to update rate based on loan type and duration rules
     useEffect(() => {
@@ -72,6 +84,11 @@ const App: React.FC = () => {
         }
     }, [isCashWithdrawal]);
 
+    // Save history to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('loanCalculatorHistory', JSON.stringify(history));
+    }, [history]);
+
     // Calculated Results
     const result = useMemo(() => {
         return calculateAnnuityLoan(amount, rate, months, selectedLoanType, startDate, isGracePeriodViolation, isCashWithdrawal, isFeeAmortized);
@@ -102,6 +119,46 @@ const App: React.FC = () => {
         } finally {
             setIsLoadingAi(false);
         }
+    };
+
+    const handleSaveHistory = () => {
+        const newItem: HistoryItem = {
+            id: Date.now().toString(),
+            savedAt: new Date().toLocaleString('uk-UA'),
+            loanType: selectedLoanType,
+            loanTitle: currentLoanTitle,
+            amount,
+            rate,
+            months,
+            startDate,
+            isGracePeriodViolation,
+            isCashWithdrawal,
+            isFeeAmortized,
+            totalPayment: result.totalPayment
+        };
+        setHistory(prev => [newItem, ...prev]);
+    };
+
+    const handleRestoreHistory = (item: HistoryItem) => {
+        setSelectedLoanType(item.loanType);
+        setAmount(item.amount);
+        setRate(item.rate);
+        setMonths(item.months);
+        setStartDate(item.startDate);
+        setIsGracePeriodViolation(item.isGracePeriodViolation);
+        setIsCashWithdrawal(item.isCashWithdrawal);
+        setIsFeeAmortized(item.isFeeAmortized);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleClearHistory = () => {
+        if (window.confirm('Ви впевнені, що хочете очистити всю історію?')) {
+            setHistory([]);
+        }
+    };
+
+    const handleDeleteHistoryItem = (id: string) => {
+        setHistory(prev => prev.filter(item => item.id !== id));
     };
 
     return (
@@ -336,6 +393,22 @@ const App: React.FC = () => {
                     {/* Right Column: Results & Charts */}
                     <div className="lg:col-span-8 space-y-8">
 
+                        {/* Summary Header & Actions */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <span className="w-1 h-6 bg-indigo-600 rounded-full"></span>
+                                Результати розрахунку
+                            </h2>
+                            <button
+                                onClick={handleSaveHistory}
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-indigo-600 font-medium hover:bg-indigo-50 transition-colors self-end sm:self-auto"
+                                title="Зберегти цей варіант розрахунку"
+                            >
+                                <Save size={18} />
+                                <span>Зберегти</span>
+                            </button>
+                        </div>
+
                         {/* Summary Cards */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <ResultCard
@@ -424,6 +497,75 @@ const App: React.FC = () => {
 
                         {/* Table */}
                         <ScheduleTable schedule={result.schedule} />
+
+                        {/* History Section */}
+                        {history.length > 0 && (
+                            <div className="mt-8">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                        <Clock size={24} className="text-indigo-600" />
+                                        Історія розрахунків
+                                    </h3>
+                                    <button
+                                        onClick={handleClearHistory}
+                                        className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1"
+                                    >
+                                        <Trash2 size={16} /> Очистити історію
+                                    </button>
+                                </div>
+                                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-gray-50 text-gray-500">
+                                            <tr>
+                                                <th className="px-4 py-3 font-medium">Дата</th>
+                                                <th className="px-4 py-3 font-medium">Тип кредиту</th>
+                                                <th className="px-4 py-3 font-medium">Сума</th>
+                                                <th className="px-4 py-3 font-medium">Термін</th>
+                                                <th className="px-4 py-3 font-medium">Виплата</th>
+                                                <th className="px-4 py-3 text-right">Дії</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                            {history.map((item) => (
+                                                <tr
+                                                    key={item.id}
+                                                    className="hover:bg-indigo-50 cursor-pointer transition-colors group"
+                                                    onClick={() => handleRestoreHistory(item)}
+                                                    title="Натисніть, щоб відкрити цей розрахунок"
+                                                >
+                                                    <td className="px-4 py-3 text-gray-500 text-xs">{item.savedAt}</td>
+                                                    <td className="px-4 py-3 font-medium text-gray-900">
+                                                        {item.loanTitle}
+                                                        {item.isCashWithdrawal && <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Готівка</span>}
+                                                    </td>
+                                                    <td className="px-4 py-3">{formatCurrency(item.amount)}</td>
+                                                    <td className="px-4 py-3">{item.months} міс.</td>
+                                                    <td className="px-4 py-3 font-bold text-indigo-600">{formatCurrency(item.totalPayment)}</td>
+                                                    <td className="px-4 py-3 text-right flex justify-end gap-2">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleRestoreHistory(item); }}
+                                                            className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors opacity-60 group-hover:opacity-100"
+                                                            title="Відновити"
+                                                        >
+                                                            <RotateCcw size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteHistoryItem(item.id); }}
+                                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-60 group-hover:opacity-100"
+                                                            title="Видалити"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                     </div>
                 </div>
